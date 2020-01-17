@@ -88,5 +88,5 @@ void counter_Right()
 void counter_Left()
 {
   count_Left++;
-}
+} 
 
