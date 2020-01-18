@@ -11,12 +11,12 @@
 #define pwm_Left 11
 #define pwm_Right 13
 //Define Variables
-double Kp_Right=3.5, Ki_Right=9,Kd_Right=0.5;
+double Kp_Right=3.5, Ki_Right=9,Kd_Right=0.5;       //Variables for PID regulator
 double Kp_Left=4.5, Ki_Left=10.9 ,Kd_Left=0.6;
-double Setpoint, Input_Right, Output_Right, Input_Left, Output_Left;
-volatile int count_Right=0; //the compiler load the variable from RAM and not from a storage register,A variable should be declared volatile whenever its value.. 
-volatile int count_Left=0;  //..can be changed by something beyond the control of the code section (because under certain conditions, the value for a variable stored in..                         
-int previoustime=0;         //..registers can be inaccurate) such as interrupt service routine
+double Setpoint, Input_Right, Output_Right, Input_Left, Output_Left;       //Setpoint=how many ticks per sampling period we want (input for PID)
+volatile int Current_NbTicks_Right=0; //the compiler load the variable from RAM and not from a storage register,A variable should be declared volatile whenever its value.. 
+volatile int Current_NbTicks_Left=0;  //..can be changed by something beyond the control of the code section (because under certain conditions, the value for a variable stored in..                         
+int Last_Sampling=0;         //..registers can be inaccurate) such as interrupt service routine
 int speed_Right=0; 
 int speed_Left =0; 
 PID PID_Right(&Input_Right, &Output_Right, &Setpoint, Kp_Right, Ki_Right, Kd_Right, DIRECT);
@@ -34,8 +34,8 @@ pinMode(pwm_Right, OUTPUT);
 pinMode(pwm_Left, OUTPUT);
 analogWrite (pwm_Right,0);
 analogWrite (pwm_Left,0);
-attachInterrupt(digitalPinToInterrupt(encoder_A_Right),counter_Right, RISING);
-attachInterrupt(digitalPinToInterrupt(encoder_A_Left),counter_Left, FALLING);
+attachInterrupt(digitalPinToInterrupt(encoder_A_Right),counter_Encoder_Right, RISING);
+attachInterrupt(digitalPinToInterrupt(encoder_A_Left),counter_Encoder_Left, FALLING);
 Input_Right = 0;
 Input_Left = 0;
 Setpoint = 20;                   //speed required (20 ticks every 10ms)
@@ -47,20 +47,20 @@ PID_Left.SetOutputLimits(-255, 255);
 //The loop mode
 void loop(){
 //sampling (Te = 10ms)
-if(millis()-previoustime>10)
+if(millis()-Last_Sampling>10)
 {
-    previoustime=millis();
+    Last_Sampling=millis();
     /*If the volatile variable is bigger than a byte  then the microcontroller can not read it in one step, because it is an 8 bit microcontroller
     This means that while your main code section (e.g. your loop) reads the first 8 bits of the variable, the interrupt might already change the second 8 bits
     so we use the ATOMIC_BLOCK macro to disable interrupts while next block executing*/
     ATOMIC_BLOCK(ATOMIC_RESTORESTATE)
           {
           //saving the number of ticks of the last period (last 10ms)
-          speed_Right=count_Right;
-          speed_Left=count_Left;
+          speed_Right=Current_NbTicks_Right;
+          speed_Left=Current_NbTicks_Left;
           //initialisation
-          count_Right=0;
-          count_Left=0;
+          Current_NbTicks_Right=0;
+          Current_NbTicks_Left=0;
           }//end of atomic block
     //It's time for PIDs regulators calculations
     Input_Right=speed_Right;
@@ -80,13 +80,12 @@ if(millis()-previoustime>10)
 }
 }
 //A function to execute every interrupt of encoder_Right
-void counter_Right()
+void counter_Encoder_Right()
 {
-  count_Right++;
+  Current_NbTicks_Right++;
 }
 //A function to execute every interrupt of encoder_Left
-void counter_Left()
+void counter_Encoder_Left()
 {
-  count_Left++;
+  Current_NbTicks_Left++;
 } 
-
