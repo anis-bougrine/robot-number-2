@@ -1,2 +1,2 @@
-The parts i worked the most are motors' speed control and how to combine between line follower and speed control, the idea behind adding the part of speed control was improving the stability of the robot by moving forward the two motors with the same speed using a PID regulator. So i think it's the most benefited part in this project compared to the first robot, so check the "2_motors_speed_control.ino" and "Final_Code.ino" files. 
-PS: you need an arduino IDE and a solidworks software to see what this files contain. 
+Compared to the first robot, this project is distinguished by the automation.
+I added to this project more stability by moving forward the two motors with the same speed, so to control the motors speed i used a PID regulator. You will find my motors speed control code in the first code than i combined it with my main code which response to the specification tasks
